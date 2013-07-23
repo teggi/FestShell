@@ -3,9 +3,11 @@
 # Should write a logging-scriptmodulefunctiongatheringofsorts. should be able to log to file and at the very least write to console as it goes.
 # also planning to add a goddamn progressbar at a later time.
 # at the moment does not support both shortname and FQDN-version of sharenames - which as i write this i realize is not even possible. you can only create shortname-UNCpaths in SCCM. good riddance - i'll just leave it in for the heck ofit!
+# Remember to remove the manual input and requirement of the "siteCode"-variable - finish the Get-SCCMSiteInformation-function instead. #yolo.
 # Usage = . .\Test-SCCMPackageFolders.ps1
 #	= Test-SCCMPackageVSFolder "sitecode" "computername"
-
+# Prerequisites: PS 2.0
+# 			   : Reading the fucking manual.
 $VerbosePreference = 'Continue'
 $DebugPreference = 'SilentlyContinue'
 
@@ -80,7 +82,7 @@ Function Get-SCCMSoftwareUpdatePackages {
 }
         
 Function Get-SCCMSiteInformation {}
-	#<noe om å finne lokal sitekode - scriptet må jo tross alt kjøres på sentral boks!>
+	#<something to enumerate sccm site info - retrieve from the local SCCM-agent - should be easy enough.>
 
 Function Get-SCCMPackageLocation { # Uses WMI to enumerate package location, thereafter we will use Win32_Share to enumerate the share-name which is also applicable in some cases.
 	Param( # 
