@@ -8,6 +8,13 @@
 #	= Test-SCCMPackageVSFolder "sitecode" "computername"
 # Prerequisites: PS 2.0
 # 			   : Reading the fucking manual.
+#
+# 				Versions
+#				0.5
+#				Starting point.
+#				0.6
+#				Added functionality to replace "+" with "_" so that the -match operator actually works.
+
 $VerbosePreference = 'Continue'
 $DebugPreference = 'SilentlyContinue'
 
@@ -26,17 +33,19 @@ Function Test-SCCMPackageVSFolder {
 		$shareNameString = "\\$($centralSiteServer)\$($shareSourceDirectory.Name)" # Preparing a variable for replacement so that we can easily attempt to match for a shared folder in case one isn't found using local - this should be added to the Get-WindowsShareName function instead.
 							foreach ($folder in $foldersToCompare) {					
 								$folderLinkedToPackage = $FALSE
+								$tempFolder = $folder.FullName.Replace("+","_") # Replacing because the -match operator can't check for pluses. Yay.
 								foreach ($softwarePackage in $softwarePackages) {
 									$tempPkgSourcePath = $softwarePackage.PkgSourcePath.Replace("\","\\") # Adding another backslash because -match also escapes with backslash.
+									$tempPkgSourcePath = $tempPkgSourcePath.Replace("+","_") # Replacing + with _ because the -match operator can't check for pluses. Yay.
 									if ($softwarePackage.PkgSourcePath.Split("\")[0] -match "[A-z]") { # This checks to see if we're dealing with a local package or not - shares will be handled seperately. Example: "C:\ProdSource\" is split into "C:" "ProdSource" whereas "C:" is [0]. If [0] matches for a letter this is treated as a local drive.
 										Write-Debug $folder.FullName # Nice to have for further development.
 										Write-Debug $tempPkgSourcePath # Nice to have for further development.
-										if ($folder.FullName -match $tempPkgSourcePath) {
+										if ($tempFolder -match $tempPkgSourcePath) {
 											$folderLinkedToPackage = $TRUE
 										}
 									}
 										else { # This automatically assumes that we are dealing with a UNC-sourcedirectory.
-											 $tempFolderShareName = $folder.FullName.Replace("$($localSourceDirectory)","$($shareNameString)")
+											 $tempFolderShareName = $tempFolder.Replace("$($localSourceDirectory)","$($shareNameString)")
 											 	if ($tempFolderShareName -match $tempPkgSourcePath) {
 													$folderLinkedToPackage = $TRUE
 												}
@@ -82,7 +91,7 @@ Function Get-SCCMSoftwareUpdatePackages {
 }
         
 Function Get-SCCMSiteInformation {}
-	#<something to enumerate sccm site info - retrieve from the local SCCM-agent - should be easy enough.>
+	#<noe om å finne lokal sitekode - scriptet må jo tross alt kjøres på sentral boks!>
 
 Function Get-SCCMPackageLocation { # Uses WMI to enumerate package location, thereafter we will use Win32_Share to enumerate the share-name which is also applicable in some cases.
 	Param( # 
