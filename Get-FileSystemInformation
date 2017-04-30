@@ -1,0 +1,36 @@
+[CmdletBinding()]
+param(
+    [Parameter(Mandatory = $False, Position = 0)]
+    $Computername = $Env:Computername,
+    [Parameter(Mandatory = $False, Position = 1)]
+    $Filter = @('*.xlsx','*.docx','*.pptx','*.doc','*.docm','*.dotx','*.xls','*.ppt') #@("*.docx,*.xlsx,*.pptx,*.doc,*.docm,*.dotx,*.xls,*.ppt")
+)
+# Array the incoming filter (defined as just comma-separated)
+
+
+# Get the entire drive-object, we'll use sizes and freespace later.
+$Drives = Get-CimInstance -ClassName Win32_LogicalDisk -Filter 'DriveType like 3' -ComputerName $Computername
+
+# Loop all the drives per server
+foreach ($Drive in $Drives) {
+    # Get all the files, we'll sort it afterwards
+    $Files = Get-ChildItem -Recurse -Path $Drive.DeviceID -Include $Filter
+    # If we get here, we need to group the results (summarize the different file extensions and add it all together into SpentDriveSpace or whatnot)
+    $FileTable = @()
+    # Added pipe into select-object -unique in order to actually only run once per extension..
+    foreach ($Extension in ($Files.Extension | Select-Object -Unique)) {
+        Write-Debug "Running on $Extension"
+        $SizeByExtension = ($Files | 
+        Where-Object {$_.Extension -like $Extension} | 
+        Measure-Object -Property Length -Sum |
+        Select-Object -ExpandProperty Sum)
+        
+        # We custom-object the output in order to remove ourselves from name and any content that may be in here.
+        $FileTable += New-Object -Type PSObject -Property @{
+            Drive = $Drive.DeviceID
+            Extension = $Extension.TrimStart('.')
+            TotalSizeMB = ($SizeByExtension /1MB)
+        }
+    }
+    $FileTable | Out-File # Somewhere over the rainbow
+}
